@@ -1,320 +1,376 @@
-import type { Course } from "@/lib/mock-data"
-import { mockCourses } from "@/lib/mock-data"
+import type { Course } from "./mock-data"
 
-// Simulate API delays and potential errors
-const simulateDelay = (ms = 1000) => new Promise((resolve) => setTimeout(resolve, ms))
-const simulateError = (probability = 0.1) => Math.random() < probability
-
+// Extended types for enhanced course details
 export interface CourseDetails extends Course {
-  syllabus: {
-    id: string
-    title: string
-    duration: string
-    lectures: {
-      id: string
-      title: string
-      duration: string
-      type: "video" | "quiz" | "assignment"
-      isCompleted?: boolean
-      videoUrl?: string
-      description?: string
-    }[]
-  }[]
-  reviews: {
-    id: string
-    user: {
-      name: string
-      avatar: string
-    }
-    rating: number
-    comment: string
-    date: string
-  }[]
   promoVideoUrl?: string
+  whatYouWillLearn: string[]
+  requirements: string[]
+  downloadableResources: number
   enrollmentCount: number
   lastUpdated: string
-  certificate: boolean
-  downloadableResources: number
-  lifetimeAccess: boolean
+  syllabus: CourseSyllabus[]
+  reviews: CourseReview[]
+  relatedCourses: Course[]
 }
 
+export interface CourseSyllabus {
+  id: string
+  title: string
+  duration: string
+  lectures: CourseLecture[]
+}
+
+export interface CourseLecture {
+  id: string
+  title: string
+  duration: string
+  type: "video" | "quiz" | "assignment" | "reading"
+  isPreview?: boolean
+}
+
+export interface CourseReview {
+  id: string
+  user: {
+    name: string
+    avatar?: string
+  }
+  rating: number
+  comment: string
+  date: string
+  helpful: number
+}
+
+// Course Player Data Types
 export interface CoursePlayerData {
-  course: CourseDetails
+  course: {
+    id: string
+    title: string
+    instructor: {
+      name: string
+      avatar?: string
+    }
+  }
   currentLecture: {
     id: string
     title: string
-    videoUrl: string
-    duration: string
     description: string
-    resources: {
-      id: string
-      title: string
-      type: string
-      url: string
-      size?: string
-    }[]
-  }
-  playlist: {
-    id: string
-    title: string
     duration: string
-    type: "video" | "quiz" | "assignment"
-    isCompleted: boolean
-    isLocked: boolean
-    thumbnail?: string
-  }[]
+    videoUrl: string
+    resources: LectureResource[]
+    transcript?: string
+    quiz?: Quiz
+  }
+  playlist: PlaylistItem[]
   userProgress: {
     completedLectures: string[]
     currentTime: number
-    notes: {
-      id: string
-      timestamp: number
-      content: string
-      createdAt: string
-    }[]
-    bookmarks: {
-      id: string
-      timestamp: number
-      title: string
-      createdAt: string
-    }[]
+    notes: Note[]
+    bookmarks: Bookmark[]
   }
-  discussions: {
-    id: string
-    user: {
-      name: string
-      avatar: string
-    }
-    content: string
-    timestamp: number
-    replies: {
-      id: string
-      user: {
-        name: string
-        avatar: string
-      }
-      content: string
-      timestamp: number
-    }[]
-    createdAt: string
-  }[]
+  discussions: Discussion[]
+  nextLecture?: PlaylistItem
+  previousLecture?: PlaylistItem
 }
 
-// Mock detailed course data
-const createDetailedCourse = (baseCourse: Course): CourseDetails => ({
-  ...baseCourse,
-  syllabus: [
-    {
-      id: "s1",
-      title: "Introduction to React",
-      duration: "2 hours",
-      lectures: [
-        {
-          id: "l1",
-          title: "What is React?",
-          duration: "15 min",
-          type: "video",
-          videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-          description: "Learn the fundamentals of React and why it's popular",
-        },
-        {
-          id: "l2",
-          title: "Setting up the Environment",
-          duration: "20 min",
-          type: "video",
-          videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-          description: "Set up your development environment for React",
-        },
-        { id: "l3", title: "Your First Component", duration: "25 min", type: "video" },
-        { id: "l4", title: "Quiz: React Basics", duration: "10 min", type: "quiz" },
-      ],
-    },
-    {
-      id: "s2",
-      title: "Components and Props",
-      duration: "3 hours",
-      lectures: [
-        { id: "l5", title: "Understanding Components", duration: "30 min", type: "video" },
-        { id: "l6", title: "Props and Data Flow", duration: "25 min", type: "video" },
-        { id: "l7", title: "Component Composition", duration: "35 min", type: "video" },
-        { id: "l8", title: "Assignment: Build a Card Component", duration: "45 min", type: "assignment" },
-      ],
-    },
-    {
-      id: "s3",
-      title: "State and Lifecycle",
-      duration: "4 hours",
-      lectures: [
-        { id: "l9", title: "Understanding State", duration: "40 min", type: "video" },
-        { id: "l10", title: "useState Hook", duration: "35 min", type: "video" },
-        { id: "l11", title: "useEffect Hook", duration: "45 min", type: "video" },
-        { id: "l12", title: "Quiz: Hooks", duration: "15 min", type: "quiz" },
-      ],
-    },
-  ],
-  reviews: [
-    {
-      id: "r1",
-      user: { name: "Alice Johnson", avatar: "/placeholder.svg?height=32&width=32&text=AJ" },
-      rating: 5,
-      comment:
-        "Excellent course! Very comprehensive and well-structured. The instructor explains complex concepts in a simple way.",
-      date: "2024-01-10",
-    },
-    {
-      id: "r2",
-      user: { name: "Bob Wilson", avatar: "/placeholder.svg?height=32&width=32&text=BW" },
-      rating: 4,
-      comment:
-        "Great content, but could use more practical examples. Overall very satisfied with the learning experience.",
-      date: "2024-01-08",
-    },
-    {
-      id: "r3",
-      user: { name: "Carol Davis", avatar: "/placeholder.svg?height=32&width=32&text=CD" },
-      rating: 5,
-      comment:
-        "This course transformed my understanding of React. Highly recommend to anyone starting with React development.",
-      date: "2024-01-05",
-    },
-  ],
-  promoVideoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-  enrollmentCount: 45000,
-  certificate: true,
-  downloadableResources: 25,
-  lifetimeAccess: true,
-})
+export interface PlaylistItem {
+  id: string
+  title: string
+  duration: string
+  type: "video" | "quiz" | "assignment"
+  isCompleted: boolean
+  isLocked: boolean
+  thumbnail?: string
+  sectionTitle: string
+}
 
-export async function getCourseById(id: string): Promise<CourseDetails> {
-  await simulateDelay(1500)
+export interface LectureResource {
+  id: string
+  title: string
+  type: "pdf" | "zip" | "link" | "code"
+  size?: string
+  url: string
+}
 
-  if (simulateError(0.05)) {
-    throw new Error("Failed to fetch course data")
+export interface Note {
+  id: string
+  timestamp: number
+  content: string
+  createdAt: string
+}
+
+export interface Bookmark {
+  id: string
+  timestamp: number
+  title: string
+  createdAt: string
+}
+
+export interface Discussion {
+  id: string
+  user: {
+    name: string
+    avatar?: string
   }
+  content: string
+  timestamp: number
+  replies: Reply[]
+  createdAt: string
+  likes: number
+}
 
-  const baseCourse = mockCourses.find((course) => course.id === id)
-  if (!baseCourse) {
+export interface Reply {
+  id: string
+  user: {
+    name: string
+    avatar?: string
+  }
+  content: string
+  createdAt: string
+}
+
+export interface Quiz {
+  id: string
+  title: string
+  questions: QuizQuestion[]
+  timeLimit?: number
+  passingScore: number
+}
+
+export interface QuizQuestion {
+  id: string
+  question: string
+  type: "multiple-choice" | "true-false" | "fill-blank"
+  options?: string[]
+  correctAnswer: string | number
+  explanation?: string
+}
+
+// Mock API functions
+export async function getCourseById(id: string): Promise<CourseDetails> {
+  // Simulate API delay
+  await new Promise((resolve) => setTimeout(resolve, 1500))
+
+  if (Math.random() < 0.1) {
     throw new Error("Course not found")
   }
 
-  return createDetailedCourse(baseCourse)
+  return {
+    id,
+    title: "Complete React Development Bootcamp 2024",
+    description:
+      "Master React from basics to advanced concepts including hooks, context, Redux, and modern development practices. Build real-world projects and become a professional React developer.",
+    thumbnail: "/placeholder.svg?height=400&width=600&text=React+Course",
+    price: 89.99,
+    originalPrice: 199.99,
+    rating: 4.8,
+    reviewCount: 12847,
+    studentCount: 45623,
+    duration: "42 hours",
+    level: "Intermediate",
+    category: "Web Development",
+    language: "English",
+    instructor: {
+      name: "Sarah Johnson",
+      bio: "Senior Full-Stack Developer with 8+ years of experience",
+      avatar: "/placeholder.svg?height=100&width=100&text=SJ",
+      rating: 4.9,
+      studentsCount: 125000,
+      coursesCount: 12,
+    },
+    tags: ["React", "JavaScript", "Frontend", "Web Development"],
+    promoVideoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+    whatYouWillLearn: [
+      "Build modern React applications from scratch",
+      "Master React Hooks and functional components",
+      "Implement state management with Redux and Context API",
+      "Create responsive and interactive user interfaces",
+      "Deploy React applications to production",
+      "Write clean, maintainable, and scalable code",
+    ],
+    requirements: [
+      "Basic knowledge of HTML, CSS, and JavaScript",
+      "Familiarity with ES6+ features",
+      "A computer with internet connection",
+      "Code editor (VS Code recommended)",
+    ],
+    downloadableResources: 25,
+    enrollmentCount: 45623,
+    lastUpdated: "2024-01-15",
+    syllabus: [
+      {
+        id: "section-1",
+        title: "Getting Started with React",
+        duration: "3h 45m",
+        lectures: [
+          { id: "1", title: "Introduction to React", duration: "15:30", type: "video", isPreview: true },
+          { id: "2", title: "Setting up Development Environment", duration: "22:15", type: "video" },
+          { id: "3", title: "Your First React Component", duration: "18:45", type: "video" },
+          { id: "4", title: "Knowledge Check", duration: "10:00", type: "quiz" },
+        ],
+      },
+      {
+        id: "section-2",
+        title: "React Fundamentals",
+        duration: "8h 20m",
+        lectures: [
+          { id: "5", title: "JSX and Components", duration: "25:30", type: "video" },
+          { id: "6", title: "Props and State", duration: "32:15", type: "video" },
+          { id: "7", title: "Event Handling", duration: "28:45", type: "video" },
+          { id: "8", title: "Conditional Rendering", duration: "20:30", type: "video" },
+          { id: "9", title: "Lists and Keys", duration: "24:15", type: "video" },
+          { id: "10", title: "Build a Todo App", duration: "45:00", type: "assignment" },
+        ],
+      },
+    ],
+    reviews: [
+      {
+        id: "1",
+        user: { name: "Alex Chen", avatar: "/placeholder.svg?height=40&width=40&text=AC" },
+        rating: 5,
+        comment:
+          "Excellent course! Sarah explains everything clearly and the projects are very practical. Highly recommended for anyone wanting to learn React.",
+        date: "2024-01-10",
+        helpful: 24,
+      },
+      {
+        id: "2",
+        user: { name: "Maria Rodriguez", avatar: "/placeholder.svg?height=40&width=40&text=MR" },
+        rating: 4,
+        comment:
+          "Great content and well-structured. The pace is perfect for beginners. Would love to see more advanced topics covered.",
+        date: "2024-01-08",
+        helpful: 18,
+      },
+    ],
+    relatedCourses: [],
+  }
 }
 
-export async function getCoursePlayerData(courseId: string, lectureId?: string): Promise<CoursePlayerData> {
-  await simulateDelay(2000)
+export async function getCoursePlayerData(courseId: string): Promise<CoursePlayerData> {
+  // Simulate API delay
+  await new Promise((resolve) => setTimeout(resolve, 1200))
 
-  if (simulateError(0.05)) {
-    throw new Error("Failed to fetch course player data")
+  if (Math.random() < 0.05) {
+    throw new Error("Failed to load course player data")
   }
-
-  const course = await getCourseById(courseId)
-  const firstLecture = course.syllabus[0]?.lectures[0]
-
-  if (!firstLecture) {
-    throw new Error("No lectures found for this course")
-  }
-
-  const currentLecture = {
-    id: firstLecture.id,
-    title: firstLecture.title,
-    videoUrl: firstLecture.videoUrl || "https://www.youtube.com/embed/dQw4w9WgXcQ",
-    duration: firstLecture.duration,
-    description: firstLecture.description || "Course lecture content",
-    resources: [
-      {
-        id: "r1",
-        title: "Lecture Slides.pdf",
-        type: "pdf",
-        url: "#",
-        size: "2.5 MB",
-      },
-      {
-        id: "r2",
-        title: "Source Code.zip",
-        type: "zip",
-        url: "#",
-        size: "1.2 MB",
-      },
-      {
-        id: "r3",
-        title: "Additional Reading.docx",
-        type: "docx",
-        url: "#",
-        size: "856 KB",
-      },
-    ],
-  }
-
-  const playlist = course.syllabus.flatMap((section) =>
-    section.lectures.map((lecture) => ({
-      id: lecture.id,
-      title: lecture.title,
-      duration: lecture.duration,
-      type: lecture.type,
-      isCompleted: Math.random() > 0.7,
-      isLocked: false,
-      thumbnail: "/placeholder.svg?height=60&width=100&text=Video",
-    })),
-  )
-
-  const userProgress = {
-    completedLectures: playlist.filter((item) => item.isCompleted).map((item) => item.id),
-    currentTime: 0,
-    notes: [
-      {
-        id: "n1",
-        timestamp: 120,
-        content: "Important concept about React components",
-        createdAt: "2024-01-15T10:30:00Z",
-      },
-      {
-        id: "n2",
-        timestamp: 300,
-        content: "Remember to use useState for state management",
-        createdAt: "2024-01-15T10:35:00Z",
-      },
-    ],
-    bookmarks: [
-      {
-        id: "b1",
-        timestamp: 180,
-        title: "Component Definition",
-        createdAt: "2024-01-15T10:32:00Z",
-      },
-    ],
-  }
-
-  const discussions = [
-    {
-      id: "d1",
-      user: { name: "John Doe", avatar: "/placeholder.svg?height=32&width=32&text=JD" },
-      content: "Great explanation of React components! Can you provide more examples?",
-      timestamp: 240,
-      replies: [
-        {
-          id: "r1",
-          user: { name: "Instructor", avatar: "/placeholder.svg?height=32&width=32&text=IN" },
-          content: "I'll add more examples in the next lecture.",
-          timestamp: 0,
-        },
-      ],
-      createdAt: "2024-01-15T11:00:00Z",
-    },
-    {
-      id: "d2",
-      user: { name: "Jane Smith", avatar: "/placeholder.svg?height=32&width=32&text=JS" },
-      content: "Having trouble with the useState hook. Any tips?",
-      timestamp: 420,
-      replies: [],
-      createdAt: "2024-01-15T11:15:00Z",
-    },
-  ]
 
   return {
-    course,
-    currentLecture,
-    playlist,
-    userProgress,
-    discussions,
+    course: {
+      id: courseId,
+      title: "Complete React Development Bootcamp 2024",
+      instructor: {
+        name: "Sarah Johnson",
+        avatar: "/placeholder.svg?height=40&width=40&text=SJ",
+      },
+    },
+    currentLecture: {
+      id: "1",
+      title: "Introduction to React",
+      description:
+        "Learn the fundamentals of React and understand why it's one of the most popular JavaScript libraries for building user interfaces.",
+      duration: "15:30",
+      videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+      resources: [
+        { id: "1", title: "React Documentation", type: "link", url: "https://react.dev" },
+        { id: "2", title: "Course Slides", type: "pdf", size: "2.5 MB", url: "/slides.pdf" },
+        { id: "3", title: "Starter Code", type: "zip", size: "1.2 MB", url: "/starter-code.zip" },
+      ],
+      transcript: "Welcome to the Complete React Development Bootcamp...",
+      quiz: {
+        id: "quiz-1",
+        title: "React Basics Quiz",
+        questions: [
+          {
+            id: "q1",
+            question: "What is React?",
+            type: "multiple-choice",
+            options: ["A JavaScript library", "A programming language", "A database", "A web server"],
+            correctAnswer: 0,
+            explanation: "React is a JavaScript library for building user interfaces.",
+          },
+        ],
+        timeLimit: 300,
+        passingScore: 80,
+      },
+    },
+    playlist: [
+      {
+        id: "1",
+        title: "Introduction to React",
+        duration: "15:30",
+        type: "video",
+        isCompleted: true,
+        isLocked: false,
+        thumbnail: "/placeholder.svg?height=60&width=100&text=Intro",
+        sectionTitle: "Getting Started",
+      },
+      {
+        id: "2",
+        title: "Setting up Development Environment",
+        duration: "22:15",
+        type: "video",
+        isCompleted: false,
+        isLocked: false,
+        thumbnail: "/placeholder.svg?height=60&width=100&text=Setup",
+        sectionTitle: "Getting Started",
+      },
+      {
+        id: "3",
+        title: "Your First React Component",
+        duration: "18:45",
+        type: "video",
+        isCompleted: false,
+        isLocked: true,
+        thumbnail: "/placeholder.svg?height=60&width=100&text=Component",
+        sectionTitle: "Getting Started",
+      },
+    ],
+    userProgress: {
+      completedLectures: ["1"],
+      currentTime: 0,
+      notes: [
+        {
+          id: "note-1",
+          timestamp: 120,
+          content: "React is a declarative library - we describe what we want, not how to do it",
+          createdAt: "2024-01-15T10:30:00Z",
+        },
+      ],
+      bookmarks: [
+        {
+          id: "bookmark-1",
+          timestamp: 300,
+          title: "Key React Concepts",
+          createdAt: "2024-01-15T10:35:00Z",
+        },
+      ],
+    },
+    discussions: [
+      {
+        id: "1",
+        user: { name: "John Doe", avatar: "/placeholder.svg?height=32&width=32&text=JD" },
+        content: "Great introduction! Can you explain more about virtual DOM?",
+        timestamp: 180,
+        replies: [
+          {
+            id: "1-1",
+            user: { name: "Sarah Johnson", avatar: "/placeholder.svg?height=32&width=32&text=SJ" },
+            content: "Great question! I'll cover virtual DOM in detail in the next lecture.",
+            createdAt: "2024-01-15T11:00:00Z",
+          },
+        ],
+        createdAt: "2024-01-15T10:45:00Z",
+        likes: 5,
+      },
+    ],
+    nextLecture: {
+      id: "2",
+      title: "Setting up Development Environment",
+      duration: "22:15",
+      type: "video",
+      isCompleted: false,
+      isLocked: false,
+      sectionTitle: "Getting Started",
+    },
   }
 }
